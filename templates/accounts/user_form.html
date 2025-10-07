@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Nuevo usuario{% endblock %}
+{% block content %}
+<h3 class="mb-3">Crear usuario</h3>
+<form method="post" class="row g-3">
+  {% csrf_token %}
+  <div class="col-md-6">
+    <label class="form-label">Usuario</label>
+    {{ form.username }}
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Correo electrónico</label>
+    {{ form.email }}
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Nombre</label>
+    {{ form.first_name }}
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Apellidos</label>
+    {{ form.last_name }}
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Rol</label>
+    {{ form.role }}
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Estado</label>
+    {{ form.is_active }}
+    <span class="ms-2">Activo</span>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Contraseña</label>
+    {{ form.password1 }}
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Confirmar contraseña</label>
+    {{ form.password2 }}
+  </div>
+
+  <div class="col-12">
+    <a href="{% url 'accounts:users_list' %}" class="btn btn-secondary">Cancelar</a>
+    <button class="btn btn-primary">Guardar</button>
+  </div>
+</form>
+
+{% block extra_js %}
+<script>
+// pequeño helper para añadir class cuando no usas crispy
+(function(){
+  const selects = document.querySelectorAll('select');
+  selects.forEach(s => s.classList.add('form-select'));
+})();
+</script>
+{% endblock %}
+{% endblock %}
