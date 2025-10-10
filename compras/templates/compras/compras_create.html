@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Compra{% endblock %}
+{% block content %}
+<h2>Registrar nueva compra</h2>
+
+<form method="post" id="compraForm">
+  {% csrf_token %}
+  <div class="card mb-3">
+    <div class="card-body">
+      {{ form.as_p }}
+    </div>
+  </div>
+
+  <!-- Bloque de detalle con encabezados -->
+  <h4 class="mt-4">Detalles de compra</h4>
+
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle" id="formset_area">
+      <thead class="table-light">
+        <tr>
+          <th style="width:45%">Producto</th>
+          <th style="width:20%">Cantidad</th>
+          <th style="width:20%">Costo unitario</th>
+          <th style="width:10%">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ formset.management_form }}
+        {% for form in formset %}
+        <tr class="formset_row">
+          <td>{{ form.producto }}</td>
+          <td>{{ form.cantidad }}</td>
+          <td>{{ form.costo_unitario }}</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" id="add-row" class="btn btn-secondary mb-3">+ Agregar línea</button><br>
+
+  <button type="submit" class="btn btn-success">Guardar compra</button>
+  <a href="{% url 'compras:compras_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const addRowBtn = document.getElementById('add-row');
+  const formsetArea = document.querySelector('#formset_area tbody');
+  const totalForms = document.querySelector('#id_detalles-TOTAL_FORMS');
+
+  addRowBtn.addEventListener('click', function() {
+    const currentFormCount = parseInt(totalForms.value);
+    const newFormIndex = currentFormCount;
+
+    // Clonar la primera fila del formset
+    const firstRow = document.querySelector('.formset_row');
+    const newRow = firstRow.cloneNode(true);
+
+    // Limpiar valores de inputs
+    newRow.querySelectorAll('input, select').forEach(input => {
+      input.name = input.name.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
+      input.id = input.id.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
+      if (input.tagName === 'INPUT') input.value = '';
+    });
+
+    // Agregar la nueva fila al DOM
+    formsetArea.appendChild(newRow);
+
+    // Actualizar total de formularios
+    totalForms.value = newFormIndex + 1;
+  });
+
+  // Eliminar fila (delegado)
+  document.getElementById('formset_area').addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-row')) {
+      e.target.closest('.formset_row').remove();
+    }
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

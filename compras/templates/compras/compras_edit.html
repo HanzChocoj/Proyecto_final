@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Editar compra{% endblock %}
+{% block content %}
+<h2>Editar compra: {{ compra.numero_factura }}</h2>
+
+<form method="post" id="compraForm">
+  {% csrf_token %}
+  
+  <!-- Encabezado de compra -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          {{ form.proveedor.label_tag }} {{ form.proveedor }}
+        </div>
+        <div class="col-md-4">
+          {{ form.numero_factura.label_tag }} {{ form.numero_factura }}
+        </div>
+        <div class="col-md-4">
+          {{ form.encargado.label_tag }} {{ form.encargado }}
+        </div>
+        <div class="col-md-12 mt-2">
+          {{ form.observaciones.label_tag }} {{ form.observaciones }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalles de compra -->
+  <h4>Detalles de compra</h4>
+
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle" id="formset_area">
+      <thead class="table-light">
+        <tr>
+          <th style="width:45%">Producto</th>
+          <th style="width:20%">Cantidad</th>
+          <th style="width:20%">Costo unitario</th>
+          <th style="width:10%">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ formset.management_form }}
+        {% for form in formset %}
+        <tr class="formset_row">
+          {{ form.id }}  <!-- Campo oculto -->
+          <td>{{ form.producto }}</td>
+          <td>{{ form.cantidad }}</td>
+          <td>{{ form.costo_unitario }}</td>
+          <td class="text-center">
+            {% if form.instance.pk %}
+              <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
+            {% else %}
+              <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" id="add-row" class="btn btn-secondary mb-3">+ Agregar línea</button><br>
+
+  <button type="submit" class="btn btn-success">Guardar cambios</button>
+  <a href="{% url 'compras:compras_list' %}" class="btn btn-secondary">Cancelar</a>
+
+  {% if form.errors %}
+  <div class="alert alert-danger mt-3">
+    <strong>Errores en el formulario:</strong> {{ form.errors }}
+  </div>
+  {% endif %}
+
+  {% if formset.non_form_errors %}
+  <div class="alert alert-danger mt-3">
+    <strong>Errores en el detalle:</strong> {{ formset.non_form_errors }}
+  </div>
+  {% endif %}
+</form>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const addRowBtn = document.getElementById('add-row');
+  const formsetArea = document.querySelector('#formset_area tbody');
+  const totalForms = document.querySelector('#id_detalles-TOTAL_FORMS');
+
+  addRowBtn.addEventListener('click', function() {
+    const currentFormCount = parseInt(totalForms.value);
+    const newFormIndex = currentFormCount;
+
+    const firstRow = document.querySelector('.formset_row');
+    const newRow = firstRow.cloneNode(true);
+
+    // Limpiar valores de los inputs
+    newRow.querySelectorAll('input, select').forEach(input => {
+      input.name = input.name.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
+      input.id = input.id.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
+      if (input.type === 'number' || input.tagName === 'INPUT') input.value = '';
+    });
+
+    // Agregar nueva fila
+    formsetArea.appendChild(newRow);
+
+    // Incrementar contador
+    totalForms.value = newFormIndex + 1;
+  });
+
+  // Eliminar fila
+  formsetArea.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-row')) {
+      e.target.closest('.formset_row').remove();
+    }
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

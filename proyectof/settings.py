@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'productos', 
+    'compras', 
 ]
 # --- Modelo de usuario personalizado ---
 AUTH_USER_MODEL = 'accounts.User'
