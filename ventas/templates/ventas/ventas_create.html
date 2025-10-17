@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Venta{% endblock %}
+
+{% block content %}
+<h2>Nueva Venta</h2>
+<form method="post">
+
+
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} mt-2">{{ message|safe }}</div>
+  {% endfor %}
+{% endif %}
+
+
+  
+  {% csrf_token %}
+  <div class="card mb-3">
+    <div class="card-body">
+      {{ form.as_p }}
+    </div>
+  </div>
+
+  <h5>Detalle</h5>
+  {{ formset.management_form }}
+
+  <!-- Encabezados tipo columna -->
+  <div class="row fw-bold border-bottom pb-2 mb-2 text-center">
+    <div class="col-md-5">Producto</div>
+    <div class="col-md-2">Cantidad</div>
+    <div class="col-md-2">Precio Unitario</div>
+    <div class="col-md-2">Subtotal</div>
+    <div class="col-md-1">Eliminar</div>
+  </div>
+
+  {% for form in formset %}
+    <div class="card mb-2 detalle-item">
+      <div class="card-body row align-items-center text-center">
+        <div class="col-md-5">{{ form.producto }}</div>
+        <div class="col-md-2">{{ form.cantidad }}</div>
+        <div class="col-md-2">{{ form.precio_unitario }}</div>
+        <div class="col-md-2 subtotal text-muted">Q 0.00</div>
+        <div class="col-md-1">{{ form.DELETE }}</div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <button type="submit" class="btn btn-success">Guardar</button>
+  <a href="{% url 'ventas:ventas_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
+
+
+
+
+
+
+
+
+{% block extra_js %}
+<style>
+  #total-general {
+    text-align: right;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+  }
+  #btn-agregar-producto {
+    display: block;
+    margin: 1rem auto;
+  }
+  /* Botón rojo con “X” */
+  .btn-eliminar {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-eliminar:hover { background-color: #bb2d3b; }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  console.log("✅ Ventas: script activo (Eliminar con X + orden fijo)");
+
+  const form = document.querySelector("main form");
+
+  // --- FOOTER con total + botones ---
+  let footer = document.createElement("div");
+  footer.id = "acciones-footer";
+  footer.className = "text-center mt-4";
+  form.appendChild(footer);
+
+  let totalDiv = document.createElement("div");
+  totalDiv.id = "total-general";
+  totalDiv.className = "alert alert-info mt-3";
+  footer.appendChild(totalDiv);
+
+  const addButton = document.createElement("button");
+  addButton.id = "btn-agregar-producto";
+  addButton.type = "button";
+  addButton.className = "btn btn-outline-primary mx-2";
+  addButton.innerText = "➕ Agregar otro producto";
+  footer.appendChild(addButton);
+
+  const saveBtn = document.querySelector("button[type='submit']");
+  const cancelBtn = document.querySelector("a.btn-secondary");
+  if (saveBtn && cancelBtn) {
+    footer.appendChild(saveBtn);
+    footer.appendChild(cancelBtn);
+  }
+
+  // --- CÁLCULOS ---
+  function calcularTotales() {
+    let total = 0.0;
+    // usa las filas actuales (tanto diseño “card” como grid)
+    const rows = document.querySelectorAll(".card-body");
+
+    rows.forEach((row) => {
+      const cantidadInput = row.querySelector("input[name$='cantidad']");
+      const precioInput = row.querySelector("input[name$='precio_unitario']");
+      if (cantidadInput && precioInput && row.offsetParent !== null) { // ignora ocultas
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precio = parseFloat(precioInput.value) || 0;
+        const subtotal = cantidad * precio;
+        total += subtotal;
+
+        let subtotalSpan = row.querySelector(".subtotal");
+        if (!subtotalSpan) {
+          subtotalSpan = document.createElement("div");
+          subtotalSpan.className = "subtotal mt-1 text-muted";
+          row.appendChild(subtotalSpan);
+        }
+        subtotalSpan.innerText = `Subtotal: Q ${subtotal.toFixed(2)}`;
+      }
+    });
+
+    totalDiv.innerHTML = `<strong>Total General: Q ${total.toFixed(2)}</strong>`;
+  }
+
+  // --- Precio automático por producto ---
+  function configurarSelectsProducto(context=document) {
+    const productoSelects = context.querySelectorAll("select[name$='producto']");
+    productoSelects.forEach((select) => {
+      select.addEventListener("change", function() {
+        const productoId = this.value;
+        const parentCard = this.closest(".card-body");
+        const precioInput = parentCard?.querySelector("input[name$='precio_unitario']");
+        if (productoId && precioInput) {
+          fetch(`/ventas/obtener_precio_producto/?producto_id=${productoId}`)
+            .then(r => r.json())
+            .then(data => { precioInput.value = data.precio.toFixed(2); calcularTotales(); })
+            .catch(err => console.error("Error al obtener precio:", err));
+        }
+      });
+    });
+  }
+
+  // --- Reemplaza checkbox DELETE por botón “X” (para filas existentes o nuevas) ---
+  function activarBotonEliminar(context=document) {
+    const filas = context.querySelectorAll(".card-body");
+    filas.forEach(fila => {
+      const check = fila.querySelector("input[name$='DELETE']");
+      if (check && !fila.querySelector(".btn-eliminar")) {
+        check.style.display = "none";  // ocultar checkbox
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn-eliminar";
+        btn.innerText = "×";
+        check.insertAdjacentElement("afterend", btn);
+      }
+    });
+  }
+
+  // Delegación de eventos para que SIEMPRE funcione la X (viejas y nuevas filas)
+  form.addEventListener("click", function(e) {
+    const btn = e.target.closest(".btn-eliminar");
+    if (!btn) return;
+    e.preventDefault();
+
+    const body = btn.closest(".card-body");
+    const check = body?.querySelector("input[name$='DELETE']");
+    if (check) check.checked = true;
+
+    // Oculta la tarjeta/fila visual
+    const card = btn.closest(".card.mb-2") || btn.closest(".detalle-item") || body;
+    if (card) card.style.display = "none";
+
+    calcularTotales();
+  });
+
+  // --- Recalcular al editar campos ---
+  document.addEventListener("input", function(e) {
+    if (e.target.name && (e.target.name.endsWith("cantidad") || e.target.name.endsWith("precio_unitario"))) {
+      calcularTotales();
+    }
+  });
+
+  // --- Inicialización ---
+  configurarSelectsProducto();
+  activarBotonEliminar();
+  calcularTotales();
+
+  // --- Agregar otro producto ---
+  addButton.addEventListener("click", function() {
+    const totalForms = document.querySelector("#id_detalles-TOTAL_FORMS");
+    const formCount = parseInt(totalForms.value);
+
+    const firstForm = document.querySelector(".card.mb-2");
+    if (!firstForm) { alert(" No se encontró el bloque base del detalle de venta."); return; }
+
+    const newForm = firstForm.cloneNode(true);
+
+    // Limpia valores visibles y asegura que DELETE esté desmarcado y sin botón duplicado
+    newForm.querySelectorAll("input, select").forEach(el => {
+      if (el.type !== "hidden") el.value = "";
+      if (el.name && el.name.endsWith("DELETE")) el.checked = false;
+    });
+    newForm.querySelectorAll(".btn-eliminar").forEach(b => b.remove());
+
+    // Actualiza índices del formset (detalles-0 → detalles-n)
+    newForm.innerHTML = newForm.innerHTML.replaceAll(`detalles-0`, `detalles-${formCount}`);
+
+    // Inserta antes del footer para mantener orden
+    form.insertBefore(newForm, footer);
+
+    // Sube el TOTAL_FORMS
+    totalForms.value = formCount + 1;
+
+    // Reactiva precio y botón X en la nueva fila
+    configurarSelectsProducto(newForm);
+    activarBotonEliminar(newForm);
+    calcularTotales();
+
+    console.log(" Nueva línea agregada (con X funcional)");
+  });
+});
+</script>
+{% endblock %}

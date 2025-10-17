@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'accounts',
     'productos', 
     'compras', 
+    'ventas',
 ]
 # --- Modelo de usuario personalizado ---
 AUTH_USER_MODEL = 'accounts.User'

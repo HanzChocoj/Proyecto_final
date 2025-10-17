@@ -7,6 +7,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('productos/', include('productos.urls')),
     path('compras/', include('compras.urls')),
+    path('ventas/', include('ventas.urls')),
 
     # Home simple: redirige a login o lista de usuarios
     path('', lambda request: redirect('accounts:users_list') if request.user.is_authenticated else redirect('accounts:login')),
