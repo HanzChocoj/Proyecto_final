@@ -7,6 +7,10 @@ from django.core.exceptions import ValidationError
 from productos.models import Producto
 from .models import Venta, DetalleVenta
 from .forms import VentaForm, DetalleVentaForm
+from django.utils.timezone import now
+from .utils import render_to_pdf
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 
 def ventas_list(request):
@@ -121,6 +125,26 @@ def ventas_create(request):
         formset = DetalleFormSet()
 
     return render(request, 'ventas/ventas_create.html', {'form': form, 'formset': formset})
+
+
+def venta_pdf(request, pk):
+    venta = get_object_or_404(
+        Venta.objects.select_related('encargado').prefetch_related('detalles__producto'),
+        pk=pk
+    )
+    detalles = venta.detalles.all().order_by('id')
+
+    # Si agregas ?download=1 en la URL, forzamos descarga
+    download = request.GET.get('download') == '1'
+
+    context = {
+        'venta': venta,
+        'detalles': detalles,
+        'now': now(),
+    }
+    filename = f"venta_{venta.numero_documento}.pdf"
+    return render_to_pdf('ventas/pdf/venta_comprobante.html', context, download=download, filename=filename)
+
 
 
 # ======================

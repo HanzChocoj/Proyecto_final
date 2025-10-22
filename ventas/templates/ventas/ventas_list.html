@@ -25,6 +25,7 @@
         <td>Q {{ v.total }}</td>
         <td>
           <a href="{% url 'ventas:ventas_edit' v.id %}" class="btn btn-sm btn-warning">Editar</a>
+          <a class="btn btn-outline-danger btn-sm" href="{% url 'ventas:venta_pdf' v.id %}" target="_blank">PDF</a>
           <form method="post" action="{% url 'ventas:ventas_delete' v.id %}" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar venta?');">Eliminar</button>

@@ -108,6 +108,14 @@ document.addEventListener("DOMContentLoaded", function() {
   saveBtn.innerText = "Guardar cambios";
   footer.appendChild(saveBtn);
 
+    // botón PDF (agregado)
+  const pdfBtn = document.createElement("a");
+  pdfBtn.href = "{% url 'ventas:venta_pdf' venta.id %}";
+  pdfBtn.target = "_blank";
+  pdfBtn.className = "btn btn-outline-danger mx-2";
+  pdfBtn.innerText = "📄 Ver PDF";
+  footer.appendChild(pdfBtn);
+
   const cancelBtn = document.createElement("a");
   cancelBtn.href = "{% url 'ventas:ventas_list' %}";
   cancelBtn.className = "btn btn-secondary mx-2";

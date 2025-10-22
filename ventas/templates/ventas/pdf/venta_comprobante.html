@@ -1,0 +1,99 @@
+{% load static %}
+{% load money %}
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Comprobante de Venta {{ venta.numero_documento }}</title>
+  <style>
+    /* Estilos básicos compatibles con xhtml2pdf */
+    @page { size: A4; margin: 25mm 15mm; }
+    body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; color: #111; }
+    .encabezado { width: 100%; border-bottom: 1px solid #999; padding-bottom: 10px; margin-bottom: 12px; }
+    .logo { float: left; width: 140px; }
+    .info-empresa { float: right; text-align: right; font-size: 12px; }
+    .clear { clear: both; }
+
+    h1 { font-size: 18px; margin: 8px 0 0 0; }
+    .meta { margin-top: 6px; }
+    .meta div { margin: 2px 0; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #999; padding: 6px; }
+    th { background: #f2f2f2; text-align: left; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+
+    .totales { margin-top: 8px; width: 100%; }
+    .totales td { border: none; padding: 4px 0; }
+    .resumen { margin-top: 14px; }
+
+    .comentarios { margin-top: 10px; font-size: 11px; color: #333; }
+    .pie { margin-top: 30px; font-size: 10px; color: #666; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div class="encabezado">
+    <div class="logo">
+      <!-- Coloca tu logo en static/img/logo.png -->
+      <img src="{% static 'img/logo.png' %}" width="140">
+    </div>
+    <div class="info-empresa">
+      <strong>Sistema de Inventario</strong><br>
+      Comprobante de Venta<br>
+      Guatemala, C.A.
+    </div>
+    <div class="clear"></div>
+  </div>
+
+  <h1>Comprobante de Venta</h1>
+  <div class="meta">
+    <div><strong>No. Documento:</strong> {{ venta.numero_documento }}</div>
+    <div><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y" }}</div>
+    <div><strong>Cliente:</strong> {{ venta.cliente }}</div>
+    {% if venta.encargado %}
+    <div><strong>Vendedor:</strong> {{ venta.encargado.get_full_name|default:venta.encargado.username }}</div>
+    {% endif %}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 50%;">Producto</th>
+        <th class="center" style="width: 10%;">Cant.</th>
+        <th class="right" style="width: 20%;">Precio</th>
+        <th class="right" style="width: 20%;">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detalles %}
+      <tr>
+        <td>{{ d.producto }}</td>
+        <td class="center">{{ d.cantidad }}</td>
+        <td class="right">Q {{ d.precio_unitario|floatformat:2 }}</td>
+        <td class="right">Q {{ d.cantidad|mul:d.precio_unitario|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totales">
+    <tr>
+      <td class="right"><strong>Total:</strong> Q {{ venta.total|floatformat:2 }}</td>
+    </tr>
+  </table>
+
+  {% if venta.comentarios %}
+  <div class="comentarios">
+    <strong>Comentarios:</strong><br>
+    {{ venta.comentarios }}
+  </div>
+  {% endif %}
+
+  <div class="pie">
+    Documento generado por el sistema el {{ now|date:"d/m/Y H:i" }}.
+  </div>
+</body>
+</html>
