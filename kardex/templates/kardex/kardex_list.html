@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Kardex{% endblock %}
+
+{% block content %}
+<h2>📊 Kardex de Productos</h2>
+
+<form method="get" class="mb-4">
+  <label for="producto">Selecciona un producto:</label>
+  <select name="producto" id="producto" class="form-select w-auto d-inline-block mx-2">
+    <option value="">-- Todos --</option>
+    {% for p in productos %}
+      <option value="{{ p.id }}" {% if p.id|stringformat:"s" == producto_id %}selected{% endif %}>
+        {{ p.nombre }}
+      </option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-primary" type="submit">Filtrar</button>
+</form>
+
+<table class="table table-bordered table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>Fecha</th>
+      <th>Tipo</th>
+      <th>Cantidad</th>
+      <th>Saldo</th>
+      <th>Referencia</th>
+      <th>Usuario</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in movimientos %}
+    <tr>
+      <td>{{ m.fecha|date:"d/m/Y H:i" }}</td>
+      <td>{{ m.tipo }}</td>
+      <td>{{ m.cantidad }}</td>
+      <td>{{ m.saldo }}</td>
+      <td>{{ m.referencia }}</td>
+      <td>{{ m.usuario }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-center">No hay movimientos registrados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

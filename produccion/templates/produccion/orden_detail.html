@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Detalle Orden #{{ orden.id }}{% endblock %}
+
+{% block content %}
+<h2>Orden de Producción #{{ orden.id }}</h2>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <p><strong>Producto Final:</strong> {{ orden.receta.producto_final }}</p>
+    <p><strong>Cantidad a producir:</strong> {{ orden.cantidad_a_producir }}</p>
+    <p><strong>Estado:</strong> {{ orden.estado }}</p>
+    <p><strong>Fecha:</strong> {{ orden.fecha|date:"d/m/Y H:i" }}</p>
+    <p><strong>Encargado:</strong> {{ orden.encargado }}</p>
+    <p><strong>Comentarios:</strong> {{ orden.comentarios }}</p>
+  </div>
+</div>
+
+<h5>Consumos requeridos:</h5>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Insumo</th>
+      <th>Cantidad necesaria</th>
+      <th>Stock actual</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for insumo, cantidad in orden.consumos_necesarios %}
+    <tr>
+      <td>{{ insumo }}</td>
+      <td>{{ cantidad }}</td>
+      <td>{{ insumo.stock }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if orden.estado == 'BORRADOR' %}
+  <a href="{% url 'produccion:orden_confirmar' orden.id %}" class="btn btn-success"
+     onclick="return confirm('¿Confirmar esta orden? Esto afectará el inventario.');">
+     Confirmar Producción
+  </a>
+{% elif orden.estado == 'CONFIRMADA' %}
+  <a href="{% url 'produccion:orden_anular' orden.id %}" class="btn btn-danger"
+     onclick="return confirm('¿Anular esta orden? Esto revertirá los movimientos.');">
+     Anular Producción
+  </a>
+{% endif %}
+
+<a href="{% url 'produccion:ordenes_list' %}" class="btn btn-secondary">Volver</a>
+{% endblock %}

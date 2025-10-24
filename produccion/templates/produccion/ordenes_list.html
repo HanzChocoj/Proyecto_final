@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Órdenes de Producción{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Órdenes de Producción</h2>
+  <a href="{% url 'produccion:orden_create' %}" class="btn btn-primary">Nueva orden</a>
+</div>
+
+<table class="table table-striped table-hover">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Producto Final</th>
+      <th>Cantidad</th>
+      <th>Fecha</th>
+      <th>Estado</th>
+      <th>Encargado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for o in ordenes %}
+      <tr>
+        <td>{{ o.id }}</td>
+        <td>{{ o.receta.producto_final }}</td>
+        <td>{{ o.cantidad_a_producir }}</td>
+        <td>{{ o.fecha|date:"d/m/Y H:i" }}</td>
+        <td>
+          {% if o.estado == 'CONFIRMADA' %}
+            <span class="badge bg-success">Confirmada</span>
+          {% elif o.estado == 'ANULADA' %}
+            <span class="badge bg-danger">Anulada</span>
+          {% else %}
+            <span class="badge bg-secondary">Borrador</span>
+          {% endif %}
+        </td>
+        <td>{{ o.encargado }}</td>
+        <td>
+          <a href="{% url 'produccion:orden_detail' o.id %}" class="btn btn-sm btn-info">Ver</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">No hay órdenes registradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

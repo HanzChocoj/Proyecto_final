@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Orden de Producción{% endblock %}
+
+{% block content %}
+<h2>Nueva Orden de Producción</h2>
+<form method="post">
+  {% csrf_token %}
+  
+  <div class="card mb-3">
+    <div class="card-body">
+      {{ form.as_p }}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-success">Guardar (Borrador)</button>
+  <a href="{% url 'produccion:ordenes_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

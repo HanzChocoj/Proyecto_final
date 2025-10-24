@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}{{ accion }} Receta{% endblock %}
+
+{% block content %}
+<h2>{{ accion }} Receta</h2>
+
+<form method="post">
+  {% csrf_token %}
+  
+  <div class="card mb-3">
+    <div class="card-body">
+      {{ form.as_p }}
+    </div>
+  </div>
+
+  <h5>Insumos</h5>
+
+  {{ formset.management_form }}
+
+  <table class="table table-bordered align-middle text-center">
+    <thead class="table-light">
+      <tr>
+        <th>Insumo</th>
+        <th>Cantidad por unidad</th>
+        <th>Eliminar</th>
+      </tr>
+    </thead>
+
+
+
+<tbody>
+  {% for f in formset %}
+  <tr class="detalle-item">
+    <!-- Campo oculto ID obligatorio -->
+    {{ f.id }}
+
+    <td>{{ f.insumo }}</td>
+    <td>{{ f.cantidad_por_unidad }}</td>
+    <td>
+      <span class="delete-hidden">{{ f.DELETE }}</span>
+      <button type="button" class="btn-eliminar">×</button>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+
+
+  </table>
+
+  <button type="submit" class="btn btn-success">Guardar</button>
+  <a href="{% url 'produccion:recetas_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
+
+
+{% block extra_js %}
+<style>
+  /* Ocultar checkbox original de eliminación */
+  .delete-hidden input[type="checkbox"] {
+    display: none;
+  }
+
+  /* Estilo para el botón rojo con “X” */
+  .btn-eliminar {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-eliminar:hover {
+    background-color: #bb2d3b;
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  console.log("✅ Producción: botón eliminar de insumo activo");
+
+  // Escucha clics dentro del formulario
+  const form = document.querySelector("form");
+  if (!form) return;
+
+  form.addEventListener("click", function(e) {
+    const btn = e.target.closest(".btn-eliminar");
+    if (!btn) return;
+    e.preventDefault();
+
+    // Buscar el checkbox DELETE asociado
+    const td = btn.closest("td");
+    const checkbox = td?.querySelector("input[name$='DELETE']");
+    if (checkbox) {
+      checkbox.checked = true;
+      const row = btn.closest("tr");
+      if (row) row.style.display = "none";
+    }
+  });
+});
+</script>
+{% endblock %}
