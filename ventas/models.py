@@ -39,10 +39,7 @@ class Venta(models.Model):
             else:
                 self.numero_documento = "1000001"
 
-        #  Guarda primero si es nuevo (para generar ID)
         super().save(*args, **kwargs)
-
-        #  Luego recalcula total y actualiza
         self.calcular_total()
         super().save(update_fields=['total'])
 
@@ -61,22 +58,20 @@ class Venta(models.Model):
         ordering = ['-fecha', '-id']
 
 
+
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
     cantidad = models.PositiveIntegerField()
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
 
-    #  VALIDACIÓN DE STOCK ANTES DE GUARDAR
     def clean(self):
         """Evita vender más producto del stock disponible."""
         if self.producto and self.cantidad:
             disponible = self.producto.stock or 0
-            # Si es un registro existente, sumar de nuevo lo anterior para recalcular correctamente
             if self.pk:
                 prev = DetalleVenta.objects.get(pk=self.pk)
-                disponible += prev.cantidad  # se "devuelve" la cantidad anterior temporalmente
-
+                disponible += prev.cantidad
             if self.cantidad > disponible:
                 raise ValidationError({
                     'cantidad': f"Stock insuficiente. Solo hay {disponible} unidades disponibles."
@@ -88,35 +83,44 @@ class DetalleVenta(models.Model):
             producto.stock = (producto.stock or 0) - int(cantidad)
             producto.save(update_fields=['stock'])
 
+            # 🟢 Registrar salida en Kardex
+            try:
+                from kardex.utils import registrar_movimiento
+                registrar_movimiento(producto, 'SALIDA', int(cantidad), f"Venta #{self.venta.numero_documento}")
+            except Exception as e:
+                print(f"⚠️ No se pudo registrar movimiento Kardex (venta): {e}")
+
     def _revert_effect(self, producto, cantidad):
         """Devuelve stock."""
         if cantidad and producto:
             producto.stock = (producto.stock or 0) + int(cantidad)
             producto.save(update_fields=['stock'])
 
+            # 🟢 Registrar reversión en Kardex (entrada)
+            try:
+                from kardex.utils import registrar_movimiento
+                registrar_movimiento(producto, 'ENTRADA', int(cantidad), f"Reversión venta #{self.venta.numero_documento}")
+            except Exception as e:
+                print(f"⚠️ No se pudo registrar reversión en Kardex: {e}")
+
     def save(self, *args, **kwargs):
         """Controla el impacto de stock al crear o editar."""
-        self.full_clean()  # valida stock antes de guardar
+        self.full_clean()
         is_new = self.pk is None
 
         if is_new:
-            # Nuevo detalle — aplica descuento de stock
             super().save(*args, **kwargs)
             self._apply_effect(self.producto, self.cantidad)
         else:
-            # ✏️ Edición de detalle existente
             previous = DetalleVenta.objects.get(pk=self.pk)
             prev_prod = previous.producto
             prev_qty = previous.cantidad
-
             super().save(*args, **kwargs)
 
-            # Si cambia el producto
             if prev_prod != self.producto:
                 self._revert_effect(prev_prod, prev_qty)
                 self._apply_effect(self.producto, self.cantidad)
             else:
-                # Si cambia la cantidad (mayor o menor)
                 delta = self.cantidad - prev_qty
                 if delta != 0:
                     if delta > 0:
@@ -124,7 +128,6 @@ class DetalleVenta(models.Model):
                     else:
                         self._revert_effect(self.producto, abs(delta))
 
-        #  Recalcular total de la venta
         self.venta.calcular_total()
         self.venta.save(update_fields=["total"])
 

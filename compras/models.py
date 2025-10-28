@@ -3,6 +3,7 @@ from productos.models import Producto
 from django.conf import settings
 from decimal import Decimal
 
+
 class Compra(models.Model):
     fecha = models.DateField(auto_now_add=True, verbose_name="Fecha de compra")
     proveedor = models.CharField(max_length=100, verbose_name="Proveedor")
@@ -40,7 +41,6 @@ class Compra(models.Model):
 
 
 
-
 class DetalleCompra(models.Model):
     compra = models.ForeignKey(Compra, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
@@ -50,7 +50,6 @@ class DetalleCompra(models.Model):
 
     def _set_stock_and_cost(self, prod, new_stock, new_cost):
         """Asigna stock/costo respetando el tipo de campo de stock del Producto."""
-        # stock en Producto es PositiveIntegerField en tu modelo
         prod.stock = int(new_stock) if new_stock > 0 else 0
         prod.costo = (Decimal(new_cost).quantize(Decimal('0.01'))) if new_stock > 0 else Decimal('0.00')
         prod.save()
@@ -71,6 +70,13 @@ class DetalleCompra(models.Model):
         C_new = value_new / S_new
         self._set_stock_and_cost(prod, S_new, C_new)
 
+        # 🟢 Registrar movimiento de ENTRADA en Kardex
+        try:
+            from kardex.utils import registrar_movimiento
+            registrar_movimiento(prod, 'ENTRADA', qty, f"Compra #{self.compra.numero_factura}")
+        except Exception as e:
+            print(f"⚠️ No se pudo registrar movimiento en Kardex (compra): {e}")
+
     def _revert_effect(self, prod, qty, unit_cost):
         """Revierte el efecto de una compra previa (resta qty y recalcula costo original)."""
         S_prev = Decimal(prod.stock)
@@ -80,7 +86,6 @@ class DetalleCompra(models.Model):
 
         S0 = S_prev - qty
         if S0 <= 0:
-            # Si al revertir queda en 0 o negativo, dejamos costo en 0 y stock en 0
             self._set_stock_and_cost(prod, 0, 0)
             return
 
@@ -89,54 +94,40 @@ class DetalleCompra(models.Model):
         C0 = value0 / S0
         self._set_stock_and_cost(prod, S0, C0)
 
-    def save(self, *args, **kwargs):
-        """
-        Guarda el detalle:
-        - Recalcula su subtotal.
-        - Si es edición, revierte la línea anterior y aplica la nueva (maneja si cambiaste de producto).
-        - Si es creación, solo aplica la nueva.
-        - Finalmente recalcula el total del encabezado de compra.
-        """
-        # 1) Recalcular subtotal propio
-        self.subtotal = self.cantidad * self.costo_unitario
+        # 🟢 Registrar reversión de compra (SALIDA) en Kardex
+        try:
+            from kardex.utils import registrar_movimiento
+            registrar_movimiento(prod, 'SALIDA', qty, f"Reversión compra #{self.compra.numero_factura}")
+        except Exception as e:
+            print(f"⚠️ No se pudo registrar reversión en Kardex: {e}")
 
-        # Detectar si es edición y capturar el estado anterior
+    def save(self, *args, **kwargs):
+        """Guarda el detalle, recalcula subtotal y actualiza inventario y costo promedio."""
+        self.subtotal = self.cantidad * self.costo_unitario
         old = None
         if self.pk:
             old = DetalleCompra.objects.select_related('producto', 'compra').get(pk=self.pk)
 
-        super().save(*args, **kwargs)  # guarda el detalle (ya con nuevos valores)
+        super().save(*args, **kwargs)
 
-        # 2) Ajustar inventario/costo promedio
         if old is None:
-            # Creación: aplicar efecto nuevo
             self._apply_effect(self.producto, self.cantidad, self.costo_unitario)
         else:
-            # Edición: revertir efecto anterior y aplicar el nuevo
             if old.producto_id != self.producto_id:
-                # Revertir en el producto anterior
                 self._revert_effect(old.producto, old.cantidad, old.costo_unitario)
-                # Aplicar en el nuevo producto
                 self._apply_effect(self.producto, self.cantidad, self.costo_unitario)
             else:
-                # Mismo producto: revertir la línea anterior y aplicar la nueva
                 self._revert_effect(self.producto, old.cantidad, old.costo_unitario)
                 self._apply_effect(self.producto, self.cantidad, self.costo_unitario)
 
-        # 3) Recalcular total del encabezado
         self.compra.save()
 
     def delete(self, *args, **kwargs):
-        """
-        Elimina el detalle revirtiendo su efecto sobre el producto
-        y actualiza el total del encabezado.
-        """
+        """Elimina el detalle revirtiendo su efecto sobre el producto y actualiza el total."""
         prod = self.producto
         compra = self.compra
-        # Revertir efecto de esta línea
         self._revert_effect(prod, self.cantidad, self.costo_unitario)
         super().delete(*args, **kwargs)
-        # Recalcular total del encabezado
         compra.save()
 
     def __str__(self):
