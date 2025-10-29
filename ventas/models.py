@@ -3,11 +3,21 @@ from django.conf import settings
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from productos.models import Producto
-
+from clientes.models import Cliente
 
 class Venta(models.Model):
     fecha = models.DateField(auto_now_add=True, verbose_name="Fecha de venta")
-    cliente = models.CharField(max_length=120, verbose_name="Cliente")
+
+
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="ventas",
+        verbose_name="Cliente"
+    )
+    
     numero_documento = models.CharField(max_length=50, unique=True, verbose_name="No. Documento", editable=False)
     encargado = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -77,13 +87,10 @@ class DetalleVenta(models.Model):
                     'cantidad': f"Stock insuficiente. Solo hay {disponible} unidades disponibles."
                 })
 
-    def _apply_effect(self, producto, cantidad):
-        """Descuenta stock."""
-        if cantidad and producto:
-            producto.stock = (producto.stock or 0) - int(cantidad)
-            producto.save(update_fields=['stock'])
 
-            # 🟢 Registrar salida en Kardex
+    def _apply_effect(self, producto, cantidad):
+        """Descuenta stock solo a través de Kardex."""
+        if cantidad and producto:
             try:
                 from kardex.utils import registrar_movimiento
                 registrar_movimiento(producto, 'SALIDA', int(cantidad), f"Venta #{self.venta.numero_documento}")
@@ -91,17 +98,15 @@ class DetalleVenta(models.Model):
                 print(f"⚠️ No se pudo registrar movimiento Kardex (venta): {e}")
 
     def _revert_effect(self, producto, cantidad):
-        """Devuelve stock."""
+        """Devuelve stock solo a través de Kardex."""
         if cantidad and producto:
-            producto.stock = (producto.stock or 0) + int(cantidad)
-            producto.save(update_fields=['stock'])
-
-            # 🟢 Registrar reversión en Kardex (entrada)
             try:
                 from kardex.utils import registrar_movimiento
                 registrar_movimiento(producto, 'ENTRADA', int(cantidad), f"Reversión venta #{self.venta.numero_documento}")
             except Exception as e:
                 print(f"⚠️ No se pudo registrar reversión en Kardex: {e}")
+
+
 
     def save(self, *args, **kwargs):
         """Controla el impacto de stock al crear o editar."""

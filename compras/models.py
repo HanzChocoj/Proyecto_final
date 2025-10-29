@@ -54,8 +54,11 @@ class DetalleCompra(models.Model):
         prod.costo = (Decimal(new_cost).quantize(Decimal('0.01'))) if new_stock > 0 else Decimal('0.00')
         prod.save()
 
+
+
+
     def _apply_effect(self, prod, qty, unit_cost):
-        """Aplica el efecto de una compra al producto (suma qty y recalcula costo promedio)."""
+        """Aplica el efecto de una compra y registra en Kardex."""
         S_prev = Decimal(prod.stock)
         C_prev = Decimal(prod.costo)
         qty = Decimal(qty)
@@ -63,14 +66,16 @@ class DetalleCompra(models.Model):
 
         S_new = S_prev + qty
         if S_new <= 0:
-            self._set_stock_and_cost(prod, 0, 0)
-            return
+            C_new = 0
+        else:
+            value_new = (S_prev * C_prev) + (qty * unit_cost)
+            C_new = value_new / S_new
 
-        value_new = (S_prev * C_prev) + (qty * unit_cost)
-        C_new = value_new / S_new
-        self._set_stock_and_cost(prod, S_new, C_new)
+        # Actualizar costo promedio (no tocar stock directamente)
+        prod.costo = C_new
+        prod.save(update_fields=['costo'])
 
-        # 🟢 Registrar movimiento de ENTRADA en Kardex
+        #  Registrar movimiento en Kardex (que actualiza el stock)
         try:
             from kardex.utils import registrar_movimiento
             registrar_movimiento(prod, 'ENTRADA', qty, f"Compra #{self.compra.numero_factura}")
@@ -78,28 +83,15 @@ class DetalleCompra(models.Model):
             print(f"⚠️ No se pudo registrar movimiento en Kardex (compra): {e}")
 
     def _revert_effect(self, prod, qty, unit_cost):
-        """Revierte el efecto de una compra previa (resta qty y recalcula costo original)."""
-        S_prev = Decimal(prod.stock)
-        C_prev = Decimal(prod.costo)
-        qty = Decimal(qty)
-        unit_cost = Decimal(unit_cost)
-
-        S0 = S_prev - qty
-        if S0 <= 0:
-            self._set_stock_and_cost(prod, 0, 0)
-            return
-
-        value_prev = S_prev * C_prev
-        value0 = value_prev - (qty * unit_cost)
-        C0 = value0 / S0
-        self._set_stock_and_cost(prod, S0, C0)
-
-        # 🟢 Registrar reversión de compra (SALIDA) en Kardex
+        """Revierte el efecto de una compra previa."""
+        #  Registrar SALIDA en Kardex (ya ajusta el stock)
         try:
             from kardex.utils import registrar_movimiento
             registrar_movimiento(prod, 'SALIDA', qty, f"Reversión compra #{self.compra.numero_factura}")
         except Exception as e:
             print(f"⚠️ No se pudo registrar reversión en Kardex: {e}")
+
+
 
     def save(self, *args, **kwargs):
         """Guarda el detalle, recalcula subtotal y actualiza inventario y costo promedio."""

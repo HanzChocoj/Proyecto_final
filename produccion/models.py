@@ -100,58 +100,43 @@ class OrdenProduccion(models.Model):
         if errores:
             raise ValidationError({"insumos": ["Stock insuficiente:\n" + "\n".join(errores)]})
 
-    # --------- Aplicar / revertir movimientos de inventario ---------
+
+
     def _aplicar_movimientos(self):
         """Descuenta insumos y suma producto final al confirmar."""
-        from kardex.utils import registrar_movimiento  # 🟢 Import local para evitar dependencias circulares
+        from kardex.utils import registrar_movimiento
 
-        # Descontar insumos
+        # Salidas de insumos
         for insumo, qty in self.consumos_necesarios():
-            insumo.stock = (insumo.stock or 0) - Decimal(qty)
-            insumo.save(update_fields=['stock'])
-
-            # 🟢 Registrar salida de insumo en Kardex
             try:
                 registrar_movimiento(insumo, 'SALIDA', qty, f"Consumo OP #{self.id}")
             except Exception as e:
                 print(f"⚠️ No se pudo registrar salida de insumo en Kardex: {e}")
 
-        # Sumar producto final
-        pf = self.producto_final()
-        pf.stock = (pf.stock or 0) + Decimal(self.cantidad_a_producir or 0)
-        pf.save(update_fields=['stock'])
-
-        # 🟢 Registrar entrada del producto final en Kardex
+        # Entrada del producto final
         try:
-            registrar_movimiento(pf, 'ENTRADA', self.cantidad_a_producir, f"Producción OP #{self.id}")
+            registrar_movimiento(self.producto_final(), 'ENTRADA', self.cantidad_a_producir, f"Producción OP #{self.id}")
         except Exception as e:
             print(f"⚠️ No se pudo registrar entrada de producto final en Kardex: {e}")
 
     def _revertir_movimientos(self):
         """Revierte la confirmación: devuelve insumos y descuenta producto final."""
-        from kardex.utils import registrar_movimiento  # 🟢 Import local seguro
+        from kardex.utils import registrar_movimiento
 
-        # Devolver insumos
+        # Entradas (reversión) de insumos
         for insumo, qty in self.consumos_necesarios():
-            insumo.stock = (insumo.stock or 0) + Decimal(qty)
-            insumo.save(update_fields=['stock'])
-
-            # 🟢 Registrar entrada (reversión) en Kardex
             try:
                 registrar_movimiento(insumo, 'ENTRADA', qty, f"Reversión insumo OP #{self.id}")
             except Exception as e:
                 print(f"⚠️ No se pudo registrar reversión de insumo en Kardex: {e}")
 
-        # Descontar producto final
-        pf = self.producto_final()
-        pf.stock = (pf.stock or 0) - Decimal(self.cantidad_a_producir or 0)
-        pf.save(update_fields=['stock'])
-
-        # 🟢 Registrar salida (reversión) del producto final
+        # Salida (reversión) del producto final
         try:
-            registrar_movimiento(pf, 'SALIDA', self.cantidad_a_producir, f"Reversión producto OP #{self.id}")
+            registrar_movimiento(self.producto_final(), 'SALIDA', self.cantidad_a_producir, f"Reversión producto OP #{self.id}")
         except Exception as e:
             print(f"⚠️ No se pudo registrar reversión de producto en Kardex: {e}")
+
+
 
     # --------- Acciones de estado ---------
     @transaction.atomic

@@ -1,25 +1,20 @@
 from django.utils import timezone
 from kardex.models import MovimientoInventario
-from decimal import Decimal
-
 
 def registrar_movimiento(producto, tipo, cantidad, referencia):
     """
-    Registra un movimiento en el Kardex y actualiza el saldo del producto.
+    Registra un movimiento en el Kardex.
     tipo = 'ENTRADA' o 'SALIDA'
-    referencia = texto que describe el origen (ej: 'Venta #5', 'Compra #10', 'Producción #3')
     """
 
-    if not producto or cantidad is None:
+    if not producto or not cantidad:
         return
 
-    cantidad = Decimal(cantidad)
+    #  Forzamos a obtener el stock real desde la base de datos
+    producto.refresh_from_db(fields=['stock'])
 
-    # Obtener saldo anterior (último movimiento registrado)
-    ultimo = MovimientoInventario.objects.filter(producto=producto).order_by('-fecha').first()
-    saldo_anterior = ultimo.saldo if ultimo else Decimal(0)
+    saldo_anterior = producto.stock or 0
 
-    #  Calcular nuevo saldo
     if tipo == 'ENTRADA':
         nuevo_saldo = saldo_anterior + cantidad
     elif tipo == 'SALIDA':
@@ -27,7 +22,7 @@ def registrar_movimiento(producto, tipo, cantidad, referencia):
     else:
         raise ValueError("Tipo de movimiento no válido. Use 'ENTRADA' o 'SALIDA'.")
 
-    #  Registrar el movimiento en Kardex
+    #  Registrar el movimiento
     MovimientoInventario.objects.create(
         producto=producto,
         tipo=tipo,
@@ -37,6 +32,6 @@ def registrar_movimiento(producto, tipo, cantidad, referencia):
         fecha=timezone.now(),
     )
 
-    #  Sincronizar stock real del producto
-    producto.stock = nuevo_saldo if nuevo_saldo >= 0 else 0
-    producto.save(update_fields=["stock"])
+    #  Actualizar el stock real del producto
+    producto.stock = nuevo_saldo
+    producto.save(update_fields=['stock'])
