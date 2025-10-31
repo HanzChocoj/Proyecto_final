@@ -10,18 +10,43 @@
   <div class="card mb-3">
     <div class="card-body">
       <div class="row g-3">
-        <div class="col-md-4">
-          {{ form.proveedor.label_tag }} {{ form.proveedor }}
+        
+        <!-- Fecha (solo lectura) -->
+        <div class="col-md-3">
+          <label class="form-label">Fecha de compra</label>
+          <input type="text" class="form-control" value="{{ compra.fecha|date:'d/m/Y' }}" readonly>
         </div>
-        <div class="col-md-4">
-          {{ form.numero_factura.label_tag }} {{ form.numero_factura }}
+
+        <!-- Proveedor (nuevo campo relacional) -->
+        <div class="col-md-5">
+          <label class="form-label">Proveedor</label>
+          {{ form.proveedor_fk }}
         </div>
+
+        <!-- No. Factura -->
         <div class="col-md-4">
-          {{ form.encargado.label_tag }} {{ form.encargado }}
+          <label class="form-label">No. Factura</label>
+          {{ form.numero_factura }}
         </div>
+
+        <!-- Encargado -->
+        <div class="col-md-6">
+          <label class="form-label">Encargado de compra</label>
+          {{ form.encargado }}
+        </div>
+
+        <!-- Total (solo lectura) -->
+        <div class="col-md-6">
+          <label class="form-label">Total (Q)</label>
+          <input type="text" class="form-control" value="{{ compra.total|floatformat:2 }}" readonly>
+        </div>
+
+        <!-- Observaciones -->
         <div class="col-md-12 mt-2">
-          {{ form.observaciones.label_tag }} {{ form.observaciones }}
+          <label class="form-label">Observaciones</label>
+          {{ form.observaciones }}
         </div>
+
       </div>
     </div>
   </div>
@@ -48,11 +73,7 @@
           <td>{{ form.cantidad }}</td>
           <td>{{ form.costo_unitario }}</td>
           <td class="text-center">
-            {% if form.instance.pk %}
-              <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
-            {% else %}
-              <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
-            {% endif %}
+            <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
           </td>
         </tr>
         {% endfor %}
@@ -78,6 +99,8 @@
   {% endif %}
 </form>
 
+
+
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -89,20 +112,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentFormCount = parseInt(totalForms.value);
     const newFormIndex = currentFormCount;
 
+    // Clonar la primera fila (no la última)
     const firstRow = document.querySelector('.formset_row');
     const newRow = firstRow.cloneNode(true);
 
-    // Limpiar valores de los inputs
+    // Limpiar todos los campos (inputs y selects)
     newRow.querySelectorAll('input, select').forEach(input => {
       input.name = input.name.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
       input.id = input.id.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
-      if (input.type === 'number' || input.tagName === 'INPUT') input.value = '';
+
+      // Vaciar valores
+      if (input.tagName === 'INPUT') {
+        input.value = '';
+      } else if (input.tagName === 'SELECT') {
+        input.selectedIndex = 0; // selecciona el primer elemento (vacío)
+      }
     });
 
-    // Agregar nueva fila
+    // Quitar cualquier id oculto de registro existente
+    const hiddenId = newRow.querySelector('input[name$="-id"]');
+    if (hiddenId) hiddenId.value = '';
+
+    // Agregar la nueva fila al DOM
     formsetArea.appendChild(newRow);
 
-    // Incrementar contador
+    // Actualizar total de formularios
     totalForms.value = newFormIndex + 1;
   });
 
@@ -114,5 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
 {% endblock %}
 {% endblock %}

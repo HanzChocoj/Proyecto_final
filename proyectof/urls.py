@@ -11,6 +11,7 @@ urlpatterns = [
     path("produccion/", include("produccion.urls")),
     path('kardex/', include('kardex.urls')),
     path('clientes/', include('clientes.urls')),
+    path('proveedores/', include('proveedores.urls')),
 
     # Home simple: redirige a login o lista de usuarios
     path('', lambda request: redirect('accounts:users_list') if request.user.is_authenticated else redirect('accounts:login')),

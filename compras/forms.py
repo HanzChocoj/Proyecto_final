@@ -4,19 +4,20 @@ from .models import Compra, DetalleCompra
 class CompraForm(forms.ModelForm):
     class Meta:
         model = Compra
-        fields = ['proveedor', 'numero_factura', 'encargado', 'observaciones']
+        fields = ['proveedor_fk', 'numero_factura', 'encargado', 'observaciones']
         widgets = {
-            'proveedor': forms.TextInput(attrs={'class': 'form-control'}),
+            'proveedor_fk': forms.Select(attrs={'class': 'form-select'}),
             'numero_factura': forms.TextInput(attrs={'class': 'form-control'}),
             'encargado': forms.Select(attrs={'class': 'form-select'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
         labels = {
-            'proveedor': 'Proveedor',
+            'proveedor_fk': 'Proveedor',
             'numero_factura': 'Número de Factura',
             'encargado': 'Encargado de compra',
             'observaciones': 'Observaciones',
         }
+
 
 class DetalleCompraForm(forms.ModelForm):
     class Meta:

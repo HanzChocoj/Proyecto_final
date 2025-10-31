@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'produccion',
     'kardex',
     'clientes',
+    'proveedores',
 ]
 # --- Modelo de usuario personalizado ---
 AUTH_USER_MODEL = 'accounts.User'

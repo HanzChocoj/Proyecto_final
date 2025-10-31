@@ -21,7 +21,15 @@
     {% for compra in compras %}
     <tr>
       <td>{{ compra.fecha|date:"d/m/Y" }}</td>
-      <td>{{ compra.proveedor }}</td>
+
+      <td>
+        {% if compra.proveedor_fk %}
+          {{ compra.proveedor_fk.nombre }}
+        {% else %}
+          {{ compra.proveedor }}
+        {% endif %}
+      </td>
+
       <td>{{ compra.numero_factura }}</td>
       <td class="text-end">{{ compra.total|floatformat:2 }}</td>
       <td>

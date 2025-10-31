@@ -7,13 +7,26 @@
 <div class="card mb-4">
   <div class="card-body">
     <div class="row">
+      
+      <!-- Información general -->
       <div class="col-md-6">
-        <p><strong>Proveedor:</strong> {{ compra.proveedor }}</p>
+        <p><strong>Proveedor:</strong>
+          {% if compra.proveedor_fk %}
+            {{ compra.proveedor_fk.nombre }}
+          {% else %}
+            {{ compra.proveedor }}
+          {% endif %}
+        </p>
         <p><strong>No. Factura:</strong> {{ compra.numero_factura }}</p>
         <p><strong>Fecha:</strong> {{ compra.fecha|date:"d/m/Y" }}</p>
       </div>
+
+      <!-- Información complementaria -->
       <div class="col-md-6">
         <p><strong>Encargado:</strong> {{ compra.encargado|default:"(sin asignar)" }}</p>
+        {% if compra.proveedor_fk %}
+          <p><strong>Tipo proveedor:</strong> {{ compra.proveedor_fk.get_tipo_display }}</p>
+        {% endif %}
         {% if compra.observaciones %}
           <p><strong>Observaciones:</strong> {{ compra.observaciones }}</p>
         {% endif %}
@@ -51,11 +64,12 @@
   </table>
 </div>
 
-<!-- Total general alineado a la derecha -->
+<!-- Total general -->
 <div class="text-end mt-3">
   <h5><strong>Total de la compra:</strong> Q {{ compra.total|floatformat:2 }}</h5>
 </div>
 
+<!-- Botones -->
 <div class="mt-4">
   <a href="{% url 'compras:compras_list' %}" class="btn btn-secondary">Volver</a>
   <a href="{% url 'compras:compras_edit' compra.pk %}" class="btn btn-warning">Editar</a>

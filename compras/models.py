@@ -2,11 +2,12 @@ from django.db import models
 from productos.models import Producto
 from django.conf import settings
 from decimal import Decimal
-
+from proveedores.models import Proveedor
 
 class Compra(models.Model):
     fecha = models.DateField(auto_now_add=True, verbose_name="Fecha de compra")
     proveedor = models.CharField(max_length=100, verbose_name="Proveedor")
+    proveedor_fk = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Proveedor (catálogo)")
     numero_factura = models.CharField(max_length=50, unique=True, verbose_name="Número de factura")
 
     encargado = models.ForeignKey(

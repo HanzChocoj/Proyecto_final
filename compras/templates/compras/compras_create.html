@@ -5,11 +5,51 @@
 
 <form method="post" id="compraForm">
   {% csrf_token %}
+
+  <!-- Encabezado de compra -->
   <div class="card mb-3">
-    <div class="card-body">
-      {{ form.as_p }}
+    <div class="card-body row g-3">
+
+      <!-- Fecha (solo lectura, se genera automáticamente) -->
+      <div class="col-md-3">
+        <label class="form-label">Fecha de compra</label>
+        <input type="text" class="form-control" value="{{ form.instance.fecha|date:'d/m/Y' }}" readonly>
+      </div>
+
+      <!-- Proveedor -->
+      <div class="col-md-5">
+        <label class="form-label">Proveedor</label>
+        {{ form.proveedor_fk }}
+      </div>
+
+      <!-- Número de factura -->
+      <div class="col-md-4">
+        <label class="form-label">No. Factura</label>
+        {{ form.numero_factura }}
+      </div>
+
+      <!-- Encargado -->
+      <div class="col-md-6">
+        <label class="form-label">Encargado de compra</label>
+        {{ form.encargado }}
+      </div>
+
+      <!-- Total (solo lectura) -->
+      <div class="col-md-6">
+        <label class="form-label">Total (Q)</label>
+        <input type="text" class="form-control" value="{{ form.instance.total|floatformat:2 }}" readonly>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="col-md-12">
+        <label class="form-label">Observaciones</label>
+        {{ form.observaciones }}
+      </div>
+
     </div>
   </div>
+  
+
 
   <!-- Bloque de detalle con encabezados -->
   <h4 class="mt-4">Detalles de compra</h4>
@@ -18,9 +58,10 @@
     <table class="table table-bordered align-middle" id="formset_area">
       <thead class="table-light">
         <tr>
-          <th style="width:45%">Producto</th>
-          <th style="width:20%">Cantidad</th>
-          <th style="width:20%">Costo unitario</th>
+          <th style="width:35%">Producto</th>
+          <th style="width:15%">Cantidad</th>
+          <th style="width:15%">Costo unitario</th>
+          <th style="width:15%">Subtotal (Q)</th>
           <th style="width:10%">Acción</th>
         </tr>
       </thead>
@@ -31,6 +72,7 @@
           <td>{{ form.producto }}</td>
           <td>{{ form.cantidad }}</td>
           <td>{{ form.costo_unitario }}</td>
+          <td class="text-end align-middle"><span class="subtotal">0.00</span></td>
           <td class="text-center">
             <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
           </td>
@@ -40,48 +82,89 @@
     </table>
   </div>
 
-  <button type="button" id="add-row" class="btn btn-secondary mb-3">+ Agregar línea</button><br>
 
+  <div class="text-end mt-3">
+    <h5><strong>Total (Q):</strong> <span id="totalCompra">0.00</span></h5>
+  </div>
+
+  <button type="button" id="add-row" class="btn btn-secondary mb-3">+ Agregar línea</button><br>
   <button type="submit" class="btn btn-success">Guardar compra</button>
   <a href="{% url 'compras:compras_list' %}" class="btn btn-secondary">Cancelar</a>
 </form>
 
+
+
+
 {% block extra_js %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const addRowBtn = document.getElementById('add-row');
   const formsetArea = document.querySelector('#formset_area tbody');
   const totalForms = document.querySelector('#id_detalles-TOTAL_FORMS');
+  const totalCompraSpan = document.getElementById('totalCompra');
 
+  // --- FUNCIONES ---
+  function calcularTotal() {
+    let total = 0;
+    formsetArea.querySelectorAll('.formset_row').forEach(row => {
+      const cantidad = parseFloat(row.querySelector('[name$="-cantidad"]')?.value) || 0;
+      const costo = parseFloat(row.querySelector('[name$="-costo_unitario"]')?.value) || 0;
+      const subtotal = cantidad * costo;
+
+      // Actualizar subtotal visual
+      const subtotalCell = row.querySelector('.subtotal');
+      if (subtotalCell) subtotalCell.textContent = subtotal.toFixed(2);
+
+      total += subtotal;
+    });
+    totalCompraSpan.textContent = total.toLocaleString('es-GT', { minimumFractionDigits: 2 });
+  }
+
+  function limpiarNuevaFila(newRow, index, oldIndex) {
+    newRow.querySelectorAll('input, select').forEach(input => {
+      input.name = input.name.replace(`-${oldIndex}-`, `-${index}-`);
+      input.id = input.id.replace(`-${oldIndex}-`, `-${index}-`);
+      if (input.tagName === 'INPUT') input.value = '';
+      else if (input.tagName === 'SELECT') input.selectedIndex = 0;
+    });
+
+    // Reiniciar subtotal visible
+    const subtotalCell = newRow.querySelector('.subtotal');
+    if (subtotalCell) subtotalCell.textContent = '0.00';
+  }
+
+  // --- EVENTO: AGREGAR FILA ---
   addRowBtn.addEventListener('click', function() {
     const currentFormCount = parseInt(totalForms.value);
-    const newFormIndex = currentFormCount;
-
-    // Clonar la primera fila del formset
     const firstRow = document.querySelector('.formset_row');
     const newRow = firstRow.cloneNode(true);
 
-    // Limpiar valores de inputs
-    newRow.querySelectorAll('input, select').forEach(input => {
-      input.name = input.name.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
-      input.id = input.id.replace(`-${currentFormCount - 1}-`, `-${newFormIndex}-`);
-      if (input.tagName === 'INPUT') input.value = '';
-    });
-
-    // Agregar la nueva fila al DOM
+    limpiarNuevaFila(newRow, currentFormCount, currentFormCount - 1);
     formsetArea.appendChild(newRow);
-
-    // Actualizar total de formularios
-    totalForms.value = newFormIndex + 1;
+    totalForms.value = currentFormCount + 1;
   });
 
-  // Eliminar fila (delegado)
-  document.getElementById('formset_area').addEventListener('click', function(e) {
+  // --- EVENTO: ELIMINAR FILA ---
+  formsetArea.addEventListener('click', function(e) {
     if (e.target.classList.contains('remove-row')) {
       e.target.closest('.formset_row').remove();
+      calcularTotal();
     }
   });
+
+  // --- EVENTO: ACTUALIZAR SUBTOTALES Y TOTAL ---
+  formsetArea.addEventListener('input', function(e) {
+    if (e.target.name.includes('cantidad') || e.target.name.includes('costo_unitario')) {
+      calcularTotal();
+    }
+  });
+
+  // Calcular total inicial
+  calcularTotal();
 });
 </script>
+
+
 {% endblock %}
 {% endblock %}
