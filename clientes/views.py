@@ -1,10 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Cliente
 from .forms import ClienteForm
+from django.db.models import Q
+
+
 
 def cliente_list(request):
+    query = request.GET.get('q', '').strip()
     clientes = Cliente.objects.all()
-    return render(request, 'clientes/cliente_list.html', {'clientes': clientes})
+
+    if query:
+        clientes = clientes.filter(
+            Q(nombre__icontains=query) |
+            Q(nit__icontains=query) |
+            Q(telefono__icontains=query) |
+            Q(codigo__icontains=query)
+        )
+
+    return render(request, 'clientes/cliente_list.html', {
+        'clientes': clientes,
+        'query': query
+    })
+
+
 
 def cliente_create(request):
     if request.method == 'POST':

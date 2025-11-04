@@ -2,12 +2,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Producto
 from .forms import ProductoForm
-
+from django.db.models import Q
 
 @login_required
 def productos_list(request):
+    query = request.GET.get('q', '').strip()
     productos = Producto.objects.all()
-    return render(request, 'productos/productos_list.html', {'productos': productos})
+
+    if query:
+        productos = productos.filter(
+            Q(nombre__icontains=query) |
+            Q(codigo__icontains=query)
+        )
+
+    return render(request, 'productos/productos_list.html', {
+        'productos': productos,
+        'query': query
+    })
+
 
 
 @login_required

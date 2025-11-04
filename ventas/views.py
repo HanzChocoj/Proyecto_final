@@ -9,13 +9,25 @@ from .models import Venta, DetalleVenta
 from .forms import VentaForm, DetalleVentaForm
 from django.utils.timezone import now
 from .utils import render_to_pdf
+from django.db import models 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-
+from django.db.models import Q
 
 def ventas_list(request):
+    query = request.GET.get('q', '').strip()
     ventas = Venta.objects.all().order_by('-fecha', '-id')
-    return render(request, 'ventas/ventas_list.html', {'ventas': ventas})
+
+    if query:
+        ventas = ventas.filter(
+            Q(numero_documento__icontains=query) |
+            Q(cliente__nombre__icontains=query)
+        )
+
+    return render(request, 'ventas/ventas_list.html', {
+        'ventas': ventas,
+        'query': query
+    })
 
 
 # ======================

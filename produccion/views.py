@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
 from django.core.exceptions import ValidationError
-
+from django.db.models import Q
 from .models import Receta, OrdenProduccion
 from .forms import RecetaForm, DetalleRecetaFormSet, OrdenProduccionForm
 
@@ -11,9 +11,22 @@ from .forms import RecetaForm, DetalleRecetaFormSet, OrdenProduccionForm
 # 📘 RECETAS
 # ==========================================
 
+
 def recetas_list(request):
+    query = request.GET.get('q', '').strip()
     recetas = Receta.objects.all().order_by('-id')
-    return render(request, 'produccion/recetas_list.html', {'recetas': recetas})
+
+    if query:
+        recetas = recetas.filter(
+            Q(nombre__icontains=query) |
+            Q(producto_final__nombre__icontains=query)
+        )
+
+    return render(request, 'produccion/recetas_list.html', {
+        'recetas': recetas,
+        'query': query
+    })
+
 
 
 @transaction.atomic
@@ -79,12 +92,25 @@ def receta_edit(request, pk):
 
 
 # ==========================================
-# ⚙️ ÓRDENES DE PRODUCCIÓN
+#  ÓRDENES DE PRODUCCIÓN
 # ==========================================
 
+
 def ordenes_list(request):
+    query = request.GET.get('q', '').strip()
     ordenes = OrdenProduccion.objects.select_related('receta', 'receta__producto_final').order_by('-fecha')
-    return render(request, 'produccion/ordenes_list.html', {'ordenes': ordenes})
+
+    if query:
+        ordenes = ordenes.filter(
+            Q(receta__nombre__icontains=query) |
+            Q(receta__producto_final__nombre__icontains=query) |
+            Q(encargado__username__icontains=query)
+        )
+
+    return render(request, 'produccion/ordenes_list.html', {
+        'ordenes': ordenes,
+        'query': query
+    })
 
 
 @transaction.atomic

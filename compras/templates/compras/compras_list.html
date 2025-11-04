@@ -4,7 +4,13 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Listado de Compras</h2>
-  <a href="{% url 'compras:compras_create' %}" class="btn btn-primary">Nueva compra</a>
+
+  <form method="get" class="d-flex" style="gap: 5px;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Buscar compra..."
+           class="form-control" style="width: 220px;">
+    <button type="submit" class="btn btn-outline-primary">Buscar</button>
+    <a href="{% url 'compras:compras_create' %}" class="btn btn-primary">Nueva compra</a>
+  </form>
 </div>
 
 <table class="table table-striped table-hover align-middle">

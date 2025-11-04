@@ -2,10 +2,18 @@
 {% block title %}Órdenes de Producción{% endblock %}
 
 {% block content %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Órdenes de Producción</h2>
-  <a href="{% url 'produccion:orden_create' %}" class="btn btn-primary">Nueva orden</a>
+
+  <form method="get" class="d-flex" style="gap: 5px;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Buscar orden..."
+           class="form-control" style="width: 220px;">
+    <button type="submit" class="btn btn-outline-primary">Buscar</button>
+    <a href="{% url 'produccion:orden_create' %}" class="btn btn-primary">Nueva orden</a>
+  </form>
 </div>
+
 
 <table class="table table-striped table-hover">
   <thead>

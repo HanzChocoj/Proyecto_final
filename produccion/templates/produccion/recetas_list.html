@@ -2,10 +2,19 @@
 {% block title %}Recetas{% endblock %}
 
 {% block content %}
+
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Recetas (Listas de Materiales)</h2>
-  <a href="{% url 'produccion:receta_create' %}" class="btn btn-primary">Nueva receta</a>
+
+  <form method="get" class="d-flex" style="gap: 5px;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Buscar receta..."
+           class="form-control" style="width: 220px;">
+    <button type="submit" class="btn btn-outline-primary">Buscar</button>
+    <a href="{% url 'produccion:receta_create' %}" class="btn btn-primary">Nueva receta</a>
+  </form>
 </div>
+
 
 <table class="table table-striped table-hover">
   <thead>

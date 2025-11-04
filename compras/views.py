@@ -4,10 +4,25 @@ from django.forms import inlineformset_factory
 from .models import Compra, DetalleCompra
 from .forms import CompraForm, DetalleCompraForm
 from django.contrib import messages
+from django.db.models import Q
+
+
 
 def compras_list(request):
+    query = request.GET.get('q', '').strip()
     compras = Compra.objects.all().order_by('-fecha')
-    return render(request, 'compras/compras_list.html', {'compras': compras})
+
+    if query:
+        compras = compras.filter(
+            Q(numero_factura__icontains=query) |
+            Q(proveedor_fk__nombre__icontains=query)
+        )
+
+    return render(request, 'compras/compras_list.html', {
+        'compras': compras,
+        'query': query
+    })
+
 
 
 def compras_create(request):

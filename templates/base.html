@@ -37,7 +37,14 @@
           <span class="navbar-text me-3">
             {{ user.get_username }} ({{ user.get_full_name|default:user.username }})
           </span>
-          <a class="btn btn-outline-light" href="{% url 'accounts:logout' %}">Salir</a>
+
+          <form action="{% url 'accounts:logout' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-light">Salir</button>
+          </form>
+
+
+      
           {% endif %}
         </div>
       </div>
