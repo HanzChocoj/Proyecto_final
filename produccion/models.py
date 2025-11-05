@@ -128,13 +128,13 @@ class OrdenProduccion(models.Model):
             try:
                 registrar_movimiento(insumo, 'ENTRADA', qty, f"Reversión insumo OP #{self.id}")
             except Exception as e:
-                print(f"⚠️ No se pudo registrar reversión de insumo en Kardex: {e}")
+                print(f" No se pudo registrar reversión de insumo en Kardex: {e}")
 
         # Salida (reversión) del producto final
         try:
             registrar_movimiento(self.producto_final(), 'SALIDA', self.cantidad_a_producir, f"Reversión producto OP #{self.id}")
         except Exception as e:
-            print(f"⚠️ No se pudo registrar reversión de producto en Kardex: {e}")
+            print(f" No se pudo registrar reversión de producto en Kardex: {e}")
 
 
 

@@ -8,7 +8,7 @@ from .forms import RecetaForm, DetalleRecetaFormSet, OrdenProduccionForm
 
 
 # ==========================================
-# 📘 RECETAS
+#  RECETAS
 # ==========================================
 
 
@@ -82,7 +82,7 @@ def receta_edit(request, pk):
             # Mostrar errores de validación del form o formset
             print("ERRORES FORM:", form.errors)
             print("ERRORES FORMSET:", formset.errors)
-            messages.error(request, "⚠️ Corrige los errores antes de guardar los cambios.")
+            messages.error(request, " Corrige los errores antes de guardar los cambios.")
 
     return render(request, 'produccion/receta_form.html', {
         'form': form,

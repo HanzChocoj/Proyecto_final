@@ -80,7 +80,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("✅ Ventas: script activo (editar con botón X y cálculos)");
+  console.log(" Ventas: script activo (editar con botón X y cálculos)");
 
   const form = document.querySelector("main form");
 
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function() {
   pdfBtn.href = "{% url 'ventas:venta_pdf' venta.id %}";
   pdfBtn.target = "_blank";
   pdfBtn.className = "btn btn-outline-danger mx-2";
-  pdfBtn.innerText = "📄 Ver PDF";
+  pdfBtn.innerText = "Ver PDF";
   footer.appendChild(pdfBtn);
 
   const cancelBtn = document.createElement("a");

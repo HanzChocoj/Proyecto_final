@@ -95,7 +95,7 @@ class DetalleVenta(models.Model):
                 from kardex.utils import registrar_movimiento
                 registrar_movimiento(producto, 'SALIDA', int(cantidad), f"Venta #{self.venta.numero_documento}")
             except Exception as e:
-                print(f"⚠️ No se pudo registrar movimiento Kardex (venta): {e}")
+                print(f" No se pudo registrar movimiento Kardex (venta): {e}")
 
     def _revert_effect(self, producto, cantidad):
         """Devuelve stock solo a través de Kardex."""
@@ -104,7 +104,7 @@ class DetalleVenta(models.Model):
                 from kardex.utils import registrar_movimiento
                 registrar_movimiento(producto, 'ENTRADA', int(cantidad), f"Reversión venta #{self.venta.numero_documento}")
             except Exception as e:
-                print(f"⚠️ No se pudo registrar reversión en Kardex: {e}")
+                print(f" No se pudo registrar reversión en Kardex: {e}")
 
 
 

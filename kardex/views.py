@@ -12,7 +12,7 @@ from productos.models import Producto
 
 
 # =======================================
-# 📊 LISTADO DEL KARDEX CON FILTROS
+# LISTADO DEL KARDEX CON FILTROS
 # =======================================
 def kardex_list(request):
     productos = Producto.objects.all().order_by("nombre")
@@ -48,7 +48,7 @@ def kardex_list(request):
 
 
 # =======================================
-# 📤 EXPORTAR KARDEX A EXCEL
+#  EXPORTAR KARDEX A EXCEL
 # =======================================
 def kardex_export_excel(request):
     # Mismos filtros que en kardex_list
@@ -71,7 +71,7 @@ def kardex_export_excel(request):
             movimientos = movimientos.filter(fecha__lt=datetime.combine(ff + timedelta(days=1), datetime.min.time()))
 
     # =======================
-    # 📘 CREAR ARCHIVO EXCEL
+    #  CREAR ARCHIVO EXCEL
     # =======================
     wb = Workbook()
     ws = wb.active
@@ -109,7 +109,7 @@ def kardex_export_excel(request):
     row = 4
     for m in movimientos:
         fecha_valor = m.fecha
-        # ⚙️ Convertir a naive datetime si tiene zona horaria
+        #  Convertir a naive datetime si tiene zona horaria
         if is_aware(fecha_valor):
             fecha_valor = make_naive(fecha_valor)
 
