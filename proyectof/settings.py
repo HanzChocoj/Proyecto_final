@@ -91,20 +91,41 @@ WSGI_APPLICATION = 'proyectof.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DB', 'railway'),
-        'USER': os.getenv('MYSQL_USER', 'root'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD', 'Gameover'),
-        'HOST': os.getenv('MYSQL_HOST', '127.0.0.1'),
-        'PORT': os.getenv('MYSQL_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
-    }
-}
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
+
+if ENVIRONMENT == "production":
+    print(" Usando base de datos de Railway (producción)")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('MYSQLDATABASE', os.getenv('MYSQL_DB', 'railway')),
+            'USER': os.getenv('MYSQLUSER', os.getenv('MYSQL_USER', 'root')),
+            'PASSWORD': os.getenv('MYSQLPASSWORD', os.getenv('MYSQL_PASSWORD', '')),
+            'HOST': os.getenv('MYSQLHOST', os.getenv('MYSQL_HOST', 'mysql.railway.internal')),
+            'PORT': os.getenv('MYSQLPORT', os.getenv('MYSQL_PORT', '3306')),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
+    }
+else:
+    print(" Usando base de datos local (desarrollo)")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'proyecto',
+            'USER': 'root',
+            'PASSWORD': 'Gameover',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
