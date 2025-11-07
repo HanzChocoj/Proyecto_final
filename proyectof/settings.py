@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-
+import socket
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -30,11 +30,50 @@ SECRET_KEY = 'django-insecure-)be^0w05ereh^srq(t8)%pg27@lmb#vo-qf^^$9t+$9v**wc9^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-CSRF_TRUSTED_ORIGINS = [
-    os.environ.get("DJANGO_CSRF_ORIGIN", "http://localhost:8000")
-]
+
+
+USE_RAILWAY = os.getenv("DJANGO_ENV") == "production"
+
+if USE_RAILWAY:
+    print("Configuración: Entorno de producción (Railway)")
+    RAILWAY_URL = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+    RAILWAY_STATIC_URL = os.getenv("RAILWAY_STATIC_URL", "")
+
+    # --- ALLOWED_HOSTS ---
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+    if RAILWAY_URL:
+        ALLOWED_HOSTS.append(RAILWAY_URL.replace("https://", "").replace("http://", ""))
+    else:
+        # Permite todos los subdominios de Railway (por seguridad interna)
+        ALLOWED_HOSTS += [".railway.app", ".up.railway.app"]
+
+    # --- CSRF ---
+    CSRF_TRUSTED_ORIGINS = [
+        f"https://{host}" for host in ALLOWED_HOSTS if not host.startswith(".")
+    ] + [
+        "https://*.railway.app",
+        "https://*.up.railway.app",
+    ]
+
+    # --- Seguridad HTTPS ---
+    SECURE_PROXY_SSLHEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+else:
+    print("Configuración: Entorno local (desarrollo)")
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+
+    SECURE_PROXY_SSLHEADER = None
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
+
 
 
 # Application definition
