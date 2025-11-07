@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-import pymysql
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -93,36 +93,39 @@ WSGI_APPLICATION = 'proyectof.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-pymysql.install_as_MySQLdb()
 
-USE_RAILWAY = os.getenv("DJANGO_ENV") == "production"
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-if USE_RAILWAY:
-    print("🚀 Usando base de datos de Railway (producción)")
+ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
+
+if ENVIRONMENT == "production":
+    print(" Usando base de datos de Railway (producción)")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv("MYSQLDATABASE"),
-            'USER': os.getenv("MYSQLUSER"),
-            'PASSWORD': os.getenv("MYSQLPASSWORD"),
-            'HOST': os.getenv("MYSQLHOST", "mysql.railway.internal"),
-            'PORT': os.getenv("MYSQLPORT", "3306"),
+            'NAME': os.getenv('MYSQLDATABASE', os.getenv('MYSQL_DB', 'railway')),
+            'USER': os.getenv('MYSQLUSER', os.getenv('MYSQL_USER', 'root')),
+            'PASSWORD': os.getenv('MYSQLPASSWORD', os.getenv('MYSQL_PASSWORD', '')),
+            'HOST': os.getenv('MYSQLHOST', os.getenv('MYSQL_HOST', 'mysql.railway.internal')),
+            'PORT': os.getenv('MYSQLPORT', os.getenv('MYSQL_PORT', '3306')),
             'OPTIONS': {
                 'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
         }
     }
 else:
-    print("💻 Usando base de datos local (desarrollo)")
+    print(" Usando base de datos local (desarrollo)")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'railway',
+            'NAME': 'proyecto',
             'USER': 'root',
-            'PASSWORD': 'Gameover',  # tu pass local
+            'PASSWORD': 'Gameover',
             'HOST': '127.0.0.1',
             'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
         }
     }
 
