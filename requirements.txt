@@ -22,6 +22,7 @@ pycairo==1.28.0
 pycparser==2.23
 pyHanko==0.31.0
 pyhanko-certvalidator==0.29.0
+PyMySQL==1.1.2
 pypdf==6.1.2
 python-bidi==0.6.6
 PyYAML==6.0.3
