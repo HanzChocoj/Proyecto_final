@@ -145,8 +145,9 @@ if ENVIRONMENT == "production":
             'NAME': os.getenv('MYSQLDATABASE', os.getenv('MYSQL_DB', 'railway')),
             'USER': os.getenv('MYSQLUSER', os.getenv('MYSQL_USER', 'root')),
             'PASSWORD': os.getenv('MYSQLPASSWORD', os.getenv('MYSQL_PASSWORD', '')),
-            'HOST': os.getenv('MYSQLHOST', os.getenv('MYSQL_HOST', 'mysql.railway.internal')),
-            'PORT': os.getenv('MYSQLPORT', os.getenv('MYSQL_PORT', '3306')),
+            'HOST': os.getenv('MYSQLHOST', os.getenv('MYSQL_HOST', 'shuttle.proxy.rlwy.net')),
+            'PORT': os.getenv('MYSQLPORT', os.getenv('MYSQL_PORT', '15217')),
+
             'OPTIONS': {
                 'charset': 'utf8mb4',
             },
